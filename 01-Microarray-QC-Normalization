@@ -1,4 +1,4 @@
-### install packages
+### install packages if necessary
 # source("https://bioconductor.org/biocLite.R")
 # biocLite()
 # library(BiocInstaller)
@@ -7,13 +7,14 @@
 
 rm(list=ls(all=TRUE))
 
-## file selects specific samples from microarray library for current analysis
+## Select analysis from list of experiments from library
 analysis_file = "Analysis_A_series.csv"
 
 library(limma)
 library(lumi)
 res1=c()
-#######
+
+####### Read Bead Files
 setwd("D:\\MicroarrayData\\Analysis")
 param = read.csv(analysis_file )
 param  = param [param$Normalize=="Y", ]
@@ -39,8 +40,9 @@ res.dir = substr(analysis_file ,1, nchar(analysis_file)-4)
 setwd("D:\\MicroarrayData\\Analysis")
 dir.create(res.dir )
 setwd(paste ("D:\\MicroarrayData\\Analysis", res.dir, sep='\\'))
-##plot(x, what = c("density", "boxplot", "pair", "MAplot", "sampleRelation", "outlier", "cv"), main)
-pdf("QC-Before-Normalization.pdf")
+
+##plot prior to normalization
+pdf("QC-Pre-Normalization.pdf")
 lumi.Q = lumiQ(data1)
 plot(lumi.Q, what="boxplot")
 plot(lumi.Q, what="sampleRelation")
@@ -50,8 +52,8 @@ dev.off()
 #######
 
 
-pdf("QC-After-Normalization.pdf")
-## Do default VST variance stabilizing transform
+pdf("QC-Post-Normalization.pdf")
+## Perform VST variance stabilizing transform (default)
 eset01 <- lumiT(data1, method = "vst")
 lumi.QT = lumiQ(eset01)
 eset1 <- lumiN(eset01, method='rsn')
@@ -60,7 +62,6 @@ lumi.QN = lumiQ(eset1)
 plot(lumi.QN, what="boxplot")
 plot(lumi.QN, what="sampleRelation")
 plot(lumi.QN, what="outlier")
-#plot(lumi.QN, what="MAplot")
 plot(lumi.QN, what="density")
 dev.off()
 

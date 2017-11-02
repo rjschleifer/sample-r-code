@@ -1,0 +1,89 @@
+### install packages
+# source("https://bioconductor.org/biocLite.R")
+# biocLite()
+# library(BiocInstaller)
+# biocLite("limma")
+# biocLite("lumi")
+
+rm(list=ls(all=TRUE))
+
+## file selects specific samples from microarray library for current analysis
+analysis_file = "Analysis_A_series.csv"
+
+library(limma)
+library(lumi)
+res1=c()
+#######
+setwd("D:\\MicroarrayData\\Analysis")
+param = read.csv(analysis_file )
+param  = param [param$Normalize=="Y", ]
+files1 = unique(as.vector(param$Beadfile))
+files1 = paste(files1 ,".txt", sep="")
+files1
+anno <- read.csv("annotations_Probe.csv")
+
+#######
+setwd("D:\\MicroarrayData\\Beadfiles")
+data1<- lumiR.batch(files1)
+param.samples <- paste(param$Barcode ,param$Chip.Pos, sep="_")
+select = sampleNames(data1) %in%param.samples
+data1 = data1[,select]
+dim(data1)
+length(sampleNames(data1))
+summary(data1, 'QC')
+#######
+
+
+#######
+res.dir = substr(analysis_file ,1, nchar(analysis_file)-4)
+setwd("D:\\MicroarrayData\\Analysis")
+dir.create(res.dir )
+setwd(paste ("D:\\MicroarrayData\\Analysis", res.dir, sep='\\'))
+##plot(x, what = c("density", "boxplot", "pair", "MAplot", "sampleRelation", "outlier", "cv"), main)
+pdf("QC-Before-Normalization.pdf")
+lumi.Q = lumiQ(data1)
+plot(lumi.Q, what="boxplot")
+plot(lumi.Q, what="sampleRelation")
+plot(lumi.Q, what="outlier")
+plot(lumi.Q, what="density")
+dev.off()
+#######
+
+
+pdf("QC-After-Normalization.pdf")
+## Do default VST variance stabilizing transform
+eset01 <- lumiT(data1, method = "vst")
+lumi.QT = lumiQ(eset01)
+eset1 <- lumiN(eset01, method='rsn')
+lumi.QN = lumiQ(eset1)
+
+plot(lumi.QN, what="boxplot")
+plot(lumi.QN, what="sampleRelation")
+plot(lumi.QN, what="outlier")
+#plot(lumi.QN, what="MAplot")
+plot(lumi.QN, what="density")
+dev.off()
+
+
+####### Write Normalized Matrix
+eset1.exl <- exprs(eset1)
+eset1.detect<-detection(eset1)  # store detection p-values in eset1.detect
+dim(eset1.exl)
+dim(eset1.detect)
+a = eset1.exl
+b = eset1.detect 
+colnames(b)
+
+###colnames to match Sample ID
+colnames(b) = paste((as.vector(param$SampleID)),"pval", sep="_")
+colnames(a) = paste((as.vector(param$SampleID)))
+
+###write normalized data
+dim(anno)
+dim(b)
+d<-cbind(anno,rowSums(b<=0.05),a);colnames (d)[5] <- "ndetect"
+head(d)
+dim(d)
+write.csv (d, "Normalized_data.csv")
+
+##END QC and Normalization

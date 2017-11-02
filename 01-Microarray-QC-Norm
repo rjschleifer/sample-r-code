@@ -49,7 +49,7 @@ plot(lumi.Q, what="sampleRelation")
 plot(lumi.Q, what="outlier")
 plot(lumi.Q, what="density")
 dev.off()
-#######
+########
 
 
 pdf("QC-Post-Normalization.pdf")
